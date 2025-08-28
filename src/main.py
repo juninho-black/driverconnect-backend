@@ -179,7 +179,7 @@ def create_test_users():
                 estado='SP',
                 cep='03000-000',
                 metodo_pagamento_preferido='pix',
-                password_hash=generate_password_hash('cliente123')
+                senha=generate_password_hash('cliente123')
             )
             db.session.add(customer)
         

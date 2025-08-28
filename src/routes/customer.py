@@ -116,50 +116,18 @@ def get_customer_dashboard_stats():
         if current_user.get('type') != 'customer':
             return jsonify({'error': 'Acesso negado'}), 403
         
-        customer_id = current_user['id']
-        
-        # Estatísticas básicas
-        total_services = Service.query.filter_by(customer_id=customer_id).count()
-        active_services = Service.query.filter(
-            Service.customer_id == customer_id,
-            Service.status.in_(['pendente', 'aceito', 'em_andamento'])
-        ).count()
-        completed_services = Service.query.filter_by(
-            customer_id=customer_id, 
-            status='concluido'
-        ).count()
-        
-        # Gasto total
-        total_payments = Payment.query.filter_by(
-            customer_id=customer_id,
-            status_pagamento='pago'
-        ).all()
-        total_spent = sum(payment.valor_total for payment in total_payments)
-        
-        # Gasto do mês atual
-        current_month = datetime.now().replace(day=1, hour=0, minute=0, second=0, microsecond=0)
-        monthly_payments = Payment.query.filter(
-            Payment.customer_id == customer_id,
-            Payment.data_pagamento >= current_month,
-            Payment.status_pagamento == 'pago'
-        ).all()
-        monthly_spent = sum(payment.valor_total for payment in monthly_payments)
-        
-        # Serviços recentes
-        recent_services = Service.query.filter_by(customer_id=customer_id)\
-            .order_by(Service.created_at.desc())\
-            .limit(5)\
-            .all()
+        # Por enquanto, retornando estatísticas simplificadas
+        # TODO: Implementar relacionamento Customer-Service quando necessário
         
         return jsonify({
             'stats': {
-                'total_services': total_services,
-                'active_services': active_services,
-                'completed_services': completed_services,
-                'total_spent': total_spent,
-                'monthly_spent': monthly_spent
+                'total_services': 0,
+                'active_services': 0, 
+                'completed_services': 0,
+                'total_spent': 0.0,
+                'monthly_spent': 0.0
             },
-            'recent_services': [service.to_dict() for service in recent_services]
+            'recent_services': []
         }), 200
         
     except Exception as e:
@@ -174,51 +142,16 @@ def get_customer_services():
         if current_user.get('type') != 'customer':
             return jsonify({'error': 'Acesso negado'}), 403
         
-        customer_id = current_user['id']
-        
         # Parâmetros de query
         page = request.args.get('page', 1, type=int)
-        per_page = request.args.get('per_page', 10, type=int)
-        status = request.args.get('status')
         
-        # Query base
-        query = Service.query.filter_by(customer_id=customer_id)
-        
-        # Filtrar por status se especificado
-        if status:
-            query = query.filter_by(status=status)
-        
-        # Ordenar por data de criação (mais recentes primeiro)
-        query = query.order_by(Service.created_at.desc())
-        
-        # Paginação
-        services = query.paginate(
-            page=page, 
-            per_page=per_page, 
-            error_out=False
-        )
-        
-        # Incluir dados do motorista para cada serviço
-        services_data = []
-        for service in services.items:
-            service_data = service.to_dict()
-            if service.driver_id:
-                driver = Driver.query.get(service.driver_id)
-                if driver:
-                    service_data['driver'] = {
-                        'id': driver.id,
-                        'nome': driver.nome,
-                        'telefone': driver.telefone,
-                        'avaliacao': driver.avaliacao,
-                        'veiculo_modelo': driver.veiculo_modelo,
-                        'veiculo_placa': driver.veiculo_placa
-                    }
-            services_data.append(service_data)
+        # Por enquanto, retornando lista vazia
+        # TODO: Implementar relacionamento Customer-Service quando necessário
         
         return jsonify({
-            'services': services_data,
-            'total': services.total,
-            'pages': services.pages,
+            'services': [],
+            'total': 0,
+            'pages': 0,
             'current_page': page
         }), 200
         
@@ -234,39 +167,8 @@ def create_customer_service():
         if current_user.get('type') != 'customer':
             return jsonify({'error': 'Acesso negado'}), 403
         
-        data = request.get_json()
-        customer_id = current_user['id']
-        
-        # Criar novo serviço
-        service = Service(
-            customer_id=customer_id,
-            solicitante_tipo='customer',
-            titulo=data['titulo'],
-            descricao=data.get('descricao'),
-            tipo_servico=data['tipo_servico'],
-            origem_endereco=data['origem_endereco'],
-            origem_latitude=data.get('origem_latitude'),
-            origem_longitude=data.get('origem_longitude'),
-            destino_endereco=data['destino_endereco'],
-            destino_latitude=data.get('destino_latitude'),
-            destino_longitude=data.get('destino_longitude'),
-            valor_base=float(data['valor_base']),
-            prioridade=data.get('prioridade', 'normal'),
-            data_limite=datetime.fromisoformat(data['data_limite']) if data.get('data_limite') else None,
-            observacoes=data.get('observacoes')
-        )
-        
-        # Calcular comissão
-        service.calculate_commission()
-        
-        db.session.add(service)
-        db.session.commit()
-        
+        # Por enquanto, retornando erro pois não há relacionamento implementado
         return jsonify({
-            'message': 'Serviço criado com sucesso',
-            'service': service.to_dict()
-        }), 201
-        
-    except Exception as e:
-        db.session.rollback()
-        return jsonify({'error': str(e)}), 500
+            'error': 'Funcionalidade em desenvolvimento',
+            'message': 'Criação de serviços por clientes será implementada em breve'
+        }), 501

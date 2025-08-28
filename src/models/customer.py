@@ -9,7 +9,7 @@ class Customer(db.Model):
     nome = db.Column(db.String(100), nullable=False)
     cpf = db.Column(db.String(14), unique=True, nullable=False)
     email = db.Column(db.String(100), unique=True, nullable=False)
-    senha = db.Column(db.String(255), nullable=False)
+    senha = db.Column(db.String(255), nullable=False)  # Renomeado de password_hash para senha
     telefone = db.Column(db.String(20), nullable=True)
     data_nascimento = db.Column(db.Date, nullable=True)
     endereco = db.Column(db.Text, nullable=True)
@@ -27,11 +27,6 @@ class Customer(db.Model):
     
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
     updated_at = db.Column(db.DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
-    
-    # Relacionamentos
-    services = db.relationship('Service', foreign_keys='Service.customer_id', backref='customer', lazy=True)
-    payments = db.relationship('Payment', foreign_keys='Payment.customer_id', backref='customer', lazy=True)
-    ratings = db.relationship('DriverRating', foreign_keys='DriverRating.customer_id', backref='customer', lazy=True)
     
     def to_dict(self):
         return {
