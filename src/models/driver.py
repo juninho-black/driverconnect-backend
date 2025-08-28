@@ -13,6 +13,12 @@ class Driver(db.Model):
     cnh = db.Column(db.String(20), unique=True, nullable=False)
     password_hash = db.Column(db.String(255), nullable=False)
     
+    # Dados de endereço
+    endereco = db.Column(db.String(300), nullable=True)
+    cidade = db.Column(db.String(100), nullable=True)
+    estado = db.Column(db.String(2), nullable=True)
+    cep = db.Column(db.String(10), nullable=True)
+    
     # Dados do veículo
     veiculo_modelo = db.Column(db.String(100), nullable=False)
     veiculo_placa = db.Column(db.String(8), unique=True, nullable=False)
@@ -47,6 +53,10 @@ class Driver(db.Model):
             'telefone': self.telefone,
             'cpf': self.cpf,
             'cnh': self.cnh,
+            'endereco': self.endereco,
+            'cidade': self.cidade,
+            'estado': self.estado,
+            'cep': self.cep,
             'veiculo_modelo': self.veiculo_modelo,
             'veiculo_placa': self.veiculo_placa,
             'veiculo_ano': self.veiculo_ano,

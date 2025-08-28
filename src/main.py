@@ -163,7 +163,7 @@ def create_test_users():
                 veiculo_modelo='Honda Civic',
                 veiculo_placa='ABC-1234',
                 veiculo_ano=2020,
-                status='disponivel',
+                status='ativo',
                 password_hash=generate_password_hash('motorista123')
             )
             db.session.add(driver)
