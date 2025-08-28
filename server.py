@@ -63,10 +63,10 @@ if __name__ == '__main__':
     port = int(os.environ.get('PORT', 5000))
     print(f"🚀 Iniciando DriverConnect Backend na porta {port}")
     
-    # Usar gunicorn em produção, socketio apenas em desenvolvimento
-    if os.environ.get('RAILWAY_ENVIRONMENT'):
-        # Produção no Railway - usar apenas Flask
+    # Usar gunicorn em produção (Render/Railway), socketio apenas em desenvolvimento
+    if os.environ.get('RENDER') or os.environ.get('RAILWAY_ENVIRONMENT'):
+        # Produção - usar apenas Flask
         app.run(host='0.0.0.0', port=port, debug=False)
     else:
-        # Desenvolvimento local - usar SocketIO
-        socketio.run(app, host='0.0.0.0', port=port, debug=False)
+        # Desenvolvimento local - usar SocketIO com flag de produção
+        socketio.run(app, host='0.0.0.0', port=port, debug=False, allow_unsafe_werkzeug=True)
