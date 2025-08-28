@@ -132,7 +132,7 @@ def create_test_users():
         existing_company = Company.query.filter_by(email='empresa@teste.com').first()
         if not existing_company:
             company = Company(
-                nome_empresa='Empresa Teste',
+                nome='Empresa Teste',
                 email='empresa@teste.com',
                 cnpj='12345678000123',
                 telefone='(11) 99999-9999',
