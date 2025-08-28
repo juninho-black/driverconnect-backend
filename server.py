@@ -11,12 +11,16 @@ backend_dir = os.path.join(current_dir, 'driverconnect_backend')
 sys.path.insert(0, backend_src_dir)
 sys.path.insert(0, backend_dir)
 
+# Tentar carregar do diretório src na raiz PRIMEIRO
+src_dir = os.path.join(current_dir, 'src')
+main_file_path = os.path.join(src_dir, "main.py")
+
+print(f"🔍 Tentando carregar de: {main_file_path}")
+print(f"📁 Arquivo existe: {os.path.exists(main_file_path)}")
+
 try:
-    # Primeiro tentar carregar do diretório src na raiz
-    src_dir = os.path.join(current_dir, 'src')
-    main_file_path = os.path.join(src_dir, "main.py")
-    
     if os.path.exists(main_file_path):
+        print("✅ Carregando do src/ na raiz...")
         spec = importlib.util.spec_from_file_location("backend_main", main_file_path)
         backend_main = importlib.util.module_from_spec(spec)
         spec.loader.exec_module(backend_main)
@@ -25,8 +29,11 @@ try:
         socketio = backend_main.socketio
         print("✅ Aplicação importada com sucesso do src/!")
     else:
+        print("⚠️ src/main.py não encontrado, tentando fallback...")
         # Fallback: tentar do driverconnect_backend/src
         main_file_path = os.path.join(backend_src_dir, "main.py")
+        print(f"🔍 Tentando fallback: {main_file_path}")
+        
         spec = importlib.util.spec_from_file_location("backend_main", main_file_path)
         backend_main = importlib.util.module_from_spec(spec)
         spec.loader.exec_module(backend_main)
