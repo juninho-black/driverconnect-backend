@@ -122,6 +122,110 @@ def db_test():
             'database_url': DATABASE_URL.replace(DB_PASSWORD, '*****') if DB_PASSWORD else 'No password set'
         }, 500
 
+@app.route('/migrate-database')
+def migrate_database():
+    try:
+        import pymysql
+        connection = pymysql.connect(
+            host=DB_HOST,
+            port=int(DB_PORT),
+            user=DB_USER,
+            password=DB_PASSWORD,
+            database=DB_NAME
+        )
+        cursor = connection.cursor()
+        
+        migrations_executed = []
+        
+        # 1. Adicionar colunas de endereço no Driver
+        try:
+            cursor.execute("ALTER TABLE drivers ADD COLUMN endereco VARCHAR(300)")
+            migrations_executed.append('drivers.endereco')
+        except Exception as e:
+            if '1060' not in str(e):  # Ignora se coluna já existe
+                raise e
+        
+        try:
+            cursor.execute("ALTER TABLE drivers ADD COLUMN cidade VARCHAR(100)")
+            migrations_executed.append('drivers.cidade')
+        except Exception as e:
+            if '1060' not in str(e):
+                raise e
+        
+        try:
+            cursor.execute("ALTER TABLE drivers ADD COLUMN estado VARCHAR(2)")
+            migrations_executed.append('drivers.estado')
+        except Exception as e:
+            if '1060' not in str(e):
+                raise e
+        
+        try:
+            cursor.execute("ALTER TABLE drivers ADD COLUMN cep VARCHAR(10)")
+            migrations_executed.append('drivers.cep')
+        except Exception as e:
+            if '1060' not in str(e):
+                raise e
+        
+        # 2. Adicionar customer_id nas outras tabelas
+        try:
+            cursor.execute("ALTER TABLE services ADD COLUMN customer_id INT, ADD FOREIGN KEY (customer_id) REFERENCES customers(id)")
+            migrations_executed.append('services.customer_id')
+        except Exception as e:
+            if '1060' not in str(e):
+                raise e
+        
+        try:
+            cursor.execute("ALTER TABLE payments ADD COLUMN customer_id INT, ADD FOREIGN KEY (customer_id) REFERENCES customers(id)")
+            migrations_executed.append('payments.customer_id')
+        except Exception as e:
+            if '1060' not in str(e):
+                raise e
+        
+        try:
+            cursor.execute("ALTER TABLE trips ADD COLUMN customer_id INT, ADD FOREIGN KEY (customer_id) REFERENCES customers(id)")
+            migrations_executed.append('trips.customer_id')
+        except Exception as e:
+            if '1060' not in str(e):
+                raise e
+        
+        try:
+            cursor.execute("ALTER TABLE driver_ratings ADD COLUMN customer_id INT, ADD FOREIGN KEY (customer_id) REFERENCES customers(id)")
+            migrations_executed.append('driver_ratings.customer_id')
+        except Exception as e:
+            if '1060' not in str(e):
+                raise e
+        
+        # 3. Tornar company_id opcional nas tabelas
+        try:
+            cursor.execute("ALTER TABLE services MODIFY company_id INT NULL")
+            migrations_executed.append('services.company_id_nullable')
+        except Exception as e:
+            pass  # Ignora se já é nullable
+        
+        try:
+            cursor.execute("ALTER TABLE driver_ratings MODIFY company_id INT NULL")
+            migrations_executed.append('driver_ratings.company_id_nullable')
+        except Exception as e:
+            pass
+        
+        connection.commit()
+        cursor.close()
+        connection.close()
+        
+        return {
+            'status': 'success',
+            'message': 'Migração executada com sucesso!',
+            'migrations_executed': migrations_executed,
+            'total_migrations': len(migrations_executed)
+        }, 200
+        
+    except Exception as e:
+        return {
+            'status': 'error',
+            'message': f'Erro na migração: {str(e)}',
+            'tipo_erro': type(e).__name__
+        }, 500
+
 @app.route('/create-test-users')
 def create_test_users():
     try:
