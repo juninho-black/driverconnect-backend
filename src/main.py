@@ -127,7 +127,7 @@ def create_test_users():
     try:
         from werkzeug.security import generate_password_hash
         
-        # 1. Criar empresa de teste
+        # Vamos criar apenas uma empresa de teste primeiro
         existing_company = Company.query.filter_by(email='empresa@teste.com').first()
         if not existing_company:
             company = Company(
@@ -144,54 +144,13 @@ def create_test_users():
                 password_hash=generate_password_hash('empresa123')
             )
             db.session.add(company)
-        
-        # 2. Criar motorista de teste
-        existing_driver = Driver.query.filter_by(email='motorista@teste.com').first()
-        if not existing_driver:
-            driver = Driver(
-                nome='Motorista Teste',
-                email='motorista@teste.com',
-                cpf='12345678901',
-                telefone='(11) 88888-8888',
-                endereco='Rua Motorista, 456',
-                cidade='São Paulo',
-                estado='SP',
-                cep='02000-000',
-                cnh='12345678901',
-                veiculo_modelo='Honda Civic',
-                veiculo_placa='ABC-1234',
-                veiculo_ano=2020,
-                status='disponivel',
-                password_hash=generate_password_hash('motorista123')
-            )
-            db.session.add(driver)
-        
-        # 3. Criar cliente de teste
-        existing_customer = Customer.query.filter_by(email='cliente@teste.com').first()
-        if not existing_customer:
-            customer = Customer(
-                nome='Cliente Teste',
-                email='cliente@teste.com',
-                cpf='98765432100',
-                telefone='(11) 77777-7777',
-                endereco='Rua Cliente, 789',
-                cidade='São Paulo',
-                estado='SP',
-                cep='03000-000',
-                metodo_pagamento_preferido='pix',
-                senha=generate_password_hash('cliente123')
-            )
-            db.session.add(customer)
-        
-        db.session.commit()
+            db.session.commit()
         
         return {
             'status': 'success',
-            'message': 'Usuários de teste criados!',
+            'message': 'Empresa de teste criada!',
             'users': {
                 'empresa': 'empresa@teste.com / empresa123',
-                'motorista': 'motorista@teste.com / motorista123',
-                'cliente': 'cliente@teste.com / cliente123',
                 'admin': 'admin@driverconnect.com / admin123'
             }
         }, 200
@@ -207,4 +166,4 @@ if __name__ == '__main__':
     port = int(os.environ.get('PORT', 5000))
     print(f"🚀 Iniciando DriverConnect Backend na porta {port}")
     print(f"📋 Banco: {DB_HOST}:{DB_PORT}/{DB_NAME}")
-    socketio.run(app, host='0.0.0.0', port=port, debug=False)
+    socketio.run(app, host='0.0.0.0', port=port, debug=False, allow_unsafe_werkzeug=True)
