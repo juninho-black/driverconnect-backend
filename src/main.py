@@ -35,7 +35,7 @@ CORS(app, origins="*")
 db.init_app(app)
 
 # Configurar SocketIO
-socketio = SocketIO(app, cors_allowed_origins="*")
+socketio = SocketIO(app, cors_allowed_origins="*", async_mode='threading')
 
 # Configurar JWT
 jwt = JWTManager(app)
@@ -47,7 +47,7 @@ with app.app_context():
     from src.models.driver import Driver
     from src.models.customer import Customer
     from src.models.service import Service
-    from src.models.payment import Payment
+    from src.models.payment import Payment, Commission, DriverEarning
     from src.models.trip import Trip
     from src.models.chat import ChatMessage, ChatRoom
     from src.models.rating import DriverRating
@@ -137,70 +137,172 @@ def migrate_database():
         
         migrations_executed = []
         
-        # 1. Adicionar colunas de endereço no Driver
+        # 1. Criar tabela commissions se não existir
+        try:
+            cursor.execute("""
+                CREATE TABLE IF NOT EXISTS commissions (
+                    id INT AUTO_INCREMENT PRIMARY KEY,
+                    payment_id INT NOT NULL,
+                    company_id INT NOT NULL,
+                    valor_comissao FLOAT NOT NULL,
+                    percentual_comissao FLOAT NOT NULL,
+                    valor_servico FLOAT NOT NULL,
+                    status VARCHAR(30) DEFAULT 'pendente',
+                    data_comissao DATETIME DEFAULT CURRENT_TIMESTAMP,
+                    data_processamento DATETIME NULL,
+                    created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+                    updated_at DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+                    FOREIGN KEY (payment_id) REFERENCES payments(id),
+                    FOREIGN KEY (company_id) REFERENCES companies(id)
+                )
+            """)
+            migrations_executed.append('commissions_table')
+        except Exception as e:
+            pass
+        
+        # 2. Criar tabela driver_earnings se não existir
+        try:
+            cursor.execute("""
+                CREATE TABLE IF NOT EXISTS driver_earnings (
+                    id INT AUTO_INCREMENT PRIMARY KEY,
+                    driver_id INT NOT NULL,
+                    payment_id INT NOT NULL,
+                    service_id INT NOT NULL,
+                    valor_bruto FLOAT NOT NULL,
+                    valor_comissao FLOAT NOT NULL,
+                    valor_liquido FLOAT NOT NULL,
+                    status_repasse VARCHAR(30) DEFAULT 'pendente',
+                    banco VARCHAR(100) NULL,
+                    agencia VARCHAR(10) NULL,
+                    conta VARCHAR(20) NULL,
+                    tipo_conta VARCHAR(20) NULL,
+                    data_ganho DATETIME DEFAULT CURRENT_TIMESTAMP,
+                    data_repasse DATETIME NULL,
+                    observacoes TEXT NULL,
+                    created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+                    updated_at DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+                    FOREIGN KEY (driver_id) REFERENCES drivers(id),
+                    FOREIGN KEY (payment_id) REFERENCES payments(id),
+                    FOREIGN KEY (service_id) REFERENCES services(id)
+                )
+            """)
+            migrations_executed.append('driver_earnings_table')
+        except Exception as e:
+            pass
+        
+        # 3. Criar tabela chat_rooms se não existir
+        try:
+            cursor.execute("""
+                CREATE TABLE IF NOT EXISTS chat_rooms (
+                    id INT AUTO_INCREMENT PRIMARY KEY,
+                    participant1_id INT NOT NULL,
+                    participant1_type VARCHAR(20) NOT NULL,
+                    participant2_id INT NOT NULL,
+                    participant2_type VARCHAR(20) NOT NULL,
+                    service_id INT NULL,
+                    is_active BOOLEAN DEFAULT TRUE,
+                    last_message_at DATETIME NULL,
+                    last_message_preview VARCHAR(200) NULL,
+                    unread_count_p1 INT DEFAULT 0,
+                    unread_count_p2 INT DEFAULT 0,
+                    created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+                    updated_at DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+                    FOREIGN KEY (service_id) REFERENCES services(id)
+                )
+            """)
+            migrations_executed.append('chat_rooms_table')
+        except Exception as e:
+            pass
+        
+        # 4. Criar tabela chat_messages se não existir
+        try:
+            cursor.execute("""
+                CREATE TABLE IF NOT EXISTS chat_messages (
+                    id INT AUTO_INCREMENT PRIMARY KEY,
+                    chat_room_id INT NOT NULL,
+                    sender_id INT NOT NULL,
+                    sender_type VARCHAR(20) NOT NULL,
+                    message TEXT NOT NULL,
+                    message_type VARCHAR(20) DEFAULT 'text',
+                    is_read BOOLEAN DEFAULT FALSE,
+                    read_at DATETIME NULL,
+                    file_url VARCHAR(500) NULL,
+                    file_name VARCHAR(200) NULL,
+                    latitude FLOAT NULL,
+                    longitude FLOAT NULL,
+                    created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+                    updated_at DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+                    FOREIGN KEY (chat_room_id) REFERENCES chat_rooms(id)
+                )
+            """)
+            migrations_executed.append('chat_messages_table')
+        except Exception as e:
+            pass
+        
+        # 5. Adicionar colunas faltantes nas tabelas existentes
         try:
             cursor.execute("ALTER TABLE drivers ADD COLUMN endereco VARCHAR(300)")
             migrations_executed.append('drivers.endereco')
         except Exception as e:
-            if '1060' not in str(e):  # Ignora se coluna já existe
-                raise e
+            if '1060' not in str(e):
+                pass
         
         try:
             cursor.execute("ALTER TABLE drivers ADD COLUMN cidade VARCHAR(100)")
             migrations_executed.append('drivers.cidade')
         except Exception as e:
             if '1060' not in str(e):
-                raise e
+                pass
         
         try:
             cursor.execute("ALTER TABLE drivers ADD COLUMN estado VARCHAR(2)")
             migrations_executed.append('drivers.estado')
         except Exception as e:
             if '1060' not in str(e):
-                raise e
+                pass
         
         try:
             cursor.execute("ALTER TABLE drivers ADD COLUMN cep VARCHAR(10)")
             migrations_executed.append('drivers.cep')
         except Exception as e:
             if '1060' not in str(e):
-                raise e
+                pass
         
-        # 2. Adicionar customer_id nas outras tabelas
+        # 6. Adicionar customer_id nas outras tabelas
         try:
-            cursor.execute("ALTER TABLE services ADD COLUMN customer_id INT, ADD FOREIGN KEY (customer_id) REFERENCES customers(id)")
+            cursor.execute("ALTER TABLE services ADD COLUMN customer_id INT")
             migrations_executed.append('services.customer_id')
         except Exception as e:
             if '1060' not in str(e):
-                raise e
+                pass
         
         try:
-            cursor.execute("ALTER TABLE payments ADD COLUMN customer_id INT, ADD FOREIGN KEY (customer_id) REFERENCES customers(id)")
+            cursor.execute("ALTER TABLE payments ADD COLUMN customer_id INT")
             migrations_executed.append('payments.customer_id')
         except Exception as e:
             if '1060' not in str(e):
-                raise e
+                pass
         
         try:
-            cursor.execute("ALTER TABLE trips ADD COLUMN customer_id INT, ADD FOREIGN KEY (customer_id) REFERENCES customers(id)")
+            cursor.execute("ALTER TABLE trips ADD COLUMN customer_id INT")
             migrations_executed.append('trips.customer_id')
         except Exception as e:
             if '1060' not in str(e):
-                raise e
+                pass
         
         try:
-            cursor.execute("ALTER TABLE driver_ratings ADD COLUMN customer_id INT, ADD FOREIGN KEY (customer_id) REFERENCES customers(id)")
+            cursor.execute("ALTER TABLE driver_ratings ADD COLUMN customer_id INT")
             migrations_executed.append('driver_ratings.customer_id')
         except Exception as e:
             if '1060' not in str(e):
-                raise e
+                pass
         
-        # 3. Tornar company_id opcional nas tabelas
+        # 7. Tornar company_id opcional nas tabelas
         try:
             cursor.execute("ALTER TABLE services MODIFY company_id INT NULL")
             migrations_executed.append('services.company_id_nullable')
         except Exception as e:
-            pass  # Ignora se já é nullable
+            pass
         
         try:
             cursor.execute("ALTER TABLE driver_ratings MODIFY company_id INT NULL")
@@ -321,4 +423,11 @@ if __name__ == '__main__':
     port = int(os.environ.get('PORT', 5000))
     print(f"🚀 Iniciando DriverConnect Backend na porta {port}")
     print(f"📋 Banco: {DB_HOST}:{DB_PORT}/{DB_NAME}")
-    socketio.run(app, host='0.0.0.0', port=port, debug=False, allow_unsafe_werkzeug=True)
+    
+    # Usar gunicorn em produção, socketio apenas em desenvolvimento
+    if os.environ.get('RAILWAY_ENVIRONMENT'):
+        # Produção no Railway - usar apenas Flask
+        app.run(host='0.0.0.0', port=port, debug=False)
+    else:
+        # Desenvolvimento local - usar SocketIO
+        socketio.run(app, host='0.0.0.0', port=port, debug=False, allow_unsafe_werkzeug=True)
