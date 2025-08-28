@@ -172,3 +172,6 @@ def create_customer_service():
             'error': 'Funcionalidade em desenvolvimento',
             'message': 'Criação de serviços por clientes será implementada em breve'
         }), 501
+        
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
