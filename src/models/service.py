@@ -8,7 +8,8 @@ class Service(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     
     # Relacionamentos
-    company_id = db.Column(db.Integer, db.ForeignKey('companies.id'), nullable=False)
+    company_id = db.Column(db.Integer, db.ForeignKey('companies.id'), nullable=True)  # Serviço de empresa
+    customer_id = db.Column(db.Integer, db.ForeignKey('customers.id'), nullable=True)  # Serviço de pessoa física
     driver_id = db.Column(db.Integer, db.ForeignKey('drivers.id'), nullable=True)
     
     # Detalhes do serviço
@@ -69,6 +70,7 @@ class Service(db.Model):
         return {
             'id': self.id,
             'company_id': self.company_id,
+            'customer_id': self.customer_id,
             'driver_id': self.driver_id,
             'titulo': self.titulo,
             'descricao': self.descricao,

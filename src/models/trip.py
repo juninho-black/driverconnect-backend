@@ -11,6 +11,7 @@ class Trip(db.Model):
     service_id = db.Column(db.Integer, db.ForeignKey('services.id'), nullable=False)
     driver_id = db.Column(db.Integer, db.ForeignKey('drivers.id'), nullable=False)
     company_id = db.Column(db.Integer, db.ForeignKey('companies.id'), nullable=False)
+    customer_id = db.Column(db.Integer, db.ForeignKey('customers.id'), nullable=True)  # Para serviços de pessoa física
     
     # Status da viagem
     status = db.Column(db.String(30), default='iniciada')  # iniciada, em_andamento, pausada, concluida, cancelada
@@ -47,6 +48,7 @@ class Trip(db.Model):
             'service_id': self.service_id,
             'driver_id': self.driver_id,
             'company_id': self.company_id,
+            'customer_id': self.customer_id,
             'status': self.status,
             'distancia_percorrida': self.distancia_percorrida,
             'tempo_viagem': self.tempo_viagem,

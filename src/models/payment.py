@@ -11,6 +11,7 @@ class Payment(db.Model):
     service_id = db.Column(db.Integer, db.ForeignKey('services.id'), nullable=False)
     company_id = db.Column(db.Integer, db.ForeignKey('companies.id'), nullable=False)
     driver_id = db.Column(db.Integer, db.ForeignKey('drivers.id'), nullable=False)
+    customer_id = db.Column(db.Integer, db.ForeignKey('customers.id'), nullable=True)  # Para serviços de pessoa física
     
     # Valores do pagamento
     valor_total = db.Column(db.Float, nullable=False)
@@ -44,6 +45,7 @@ class Payment(db.Model):
             'service_id': self.service_id,
             'company_id': self.company_id,
             'driver_id': self.driver_id,
+            'customer_id': self.customer_id,
             'valor_total': self.valor_total,
             'valor_comissao': self.valor_comissao,
             'valor_motorista': self.valor_motorista,

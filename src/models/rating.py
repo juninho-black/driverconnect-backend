@@ -8,7 +8,8 @@ class DriverRating(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     
     # Quem avaliou
-    company_id = db.Column(db.Integer, db.ForeignKey('companies.id'), nullable=False)
+    company_id = db.Column(db.Integer, db.ForeignKey('companies.id'), nullable=True)  # Avaliação de empresa
+    customer_id = db.Column(db.Integer, db.ForeignKey('customers.id'), nullable=True)  # Avaliação de cliente
     
     # Quem foi avaliado
     driver_id = db.Column(db.Integer, db.ForeignKey('drivers.id'), nullable=False)
@@ -27,6 +28,7 @@ class DriverRating(db.Model):
         return {
             'id': self.id,
             'company_id': self.company_id,
+            'customer_id': self.customer_id,
             'driver_id': self.driver_id,
             'service_id': self.service_id,
             'stars': self.stars,

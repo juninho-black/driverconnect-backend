@@ -28,6 +28,12 @@ class Customer(db.Model):
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
     updated_at = db.Column(db.DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
     
+    # Relacionamentos
+    services = db.relationship('Service', foreign_keys='Service.customer_id', backref='customer', lazy=True)
+    payments = db.relationship('Payment', foreign_keys='Payment.customer_id', backref='customer', lazy=True)
+    trips = db.relationship('Trip', foreign_keys='Trip.customer_id', backref='customer', lazy=True)
+    ratings = db.relationship('DriverRating', foreign_keys='DriverRating.customer_id', backref='customer', lazy=True)
+    
     def to_dict(self):
         return {
             'id': self.id,
