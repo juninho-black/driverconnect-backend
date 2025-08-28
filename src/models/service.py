@@ -54,7 +54,7 @@ class Service(db.Model):
     # Relacionamentos
     trips = db.relationship('Trip', backref='service', lazy=True, cascade='all, delete-orphan')
     payments = db.relationship('Payment', backref='service', lazy=True, cascade='all, delete-orphan')
-    messages = db.relationship('ChatMessage', backref='service', lazy=True, cascade='all, delete-orphan')
+    # messages = db.relationship('ChatMessage', backref='service', lazy=True, cascade='all, delete-orphan')  # Removido: ChatMessage não tem service_id
     
     def calculate_commission(self):
         """Calcula a comissão da plataforma"""
